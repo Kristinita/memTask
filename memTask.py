@@ -66,18 +66,16 @@ class memTask(sublime_plugin.WindowCommand):
             countingInProgress = True
             timeSec = (datetime.datetime.now() - self.lastChangeTime).seconds
 
-            if (self.lastChangeTime -
-                    self.branchCheckTime).seconds > self.setting['branch_check_interval']:
-                self.branchCheckTime = self.lastChangeTime
-                try:
-                    with open(self.dirSep.join([sublime.active_window().folders()[0], '.git', 'HEAD']), "r") as headFile:
-                        self.currentBranch = headFile.read().split(
-                            '/')[-1].replace('\n', '')
-                        headFile.close()
-                except Exception as e:
-                    # print("No git :(", e)
-                except IOError as e:
-                    # print('No git :(')
+            # if (self.lastChangeTime - self.branchCheckTime).seconds > self.setting['branch_check_interval']:
+            #     self.branchCheckTime = self.lastChangeTime
+            #     try:
+            #         with open(self.dirSep.join([sublime.active_window().folders()[0], '.git', 'HEAD']) , "r") as headFile:
+            #             self.currentBranch = headFile.read().split('/')[-1].replace('\n', '')
+            #             headFile.close()
+            #     except Exception as e:
+            #         print("No git :(", e)
+            #     except IOError as e:
+            #         print('No git :(')
 
             if timeSec > self.setting['idle']:
                 self.stopTimer = True
