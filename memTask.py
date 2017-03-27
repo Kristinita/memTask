@@ -1,14 +1,15 @@
 # -*- coding: utf8 -*-
-import sublime
-import sublime_plugin
-import json
 import datetime
-from collections import defaultdict
+import json
 import platform
 import re
-from pprint import pprint
-from math import floor
+import sublime
+import sublime_plugin
 import time
+
+from collections import defaultdict
+from math import floor
+from pprint import pprint
 
 try:
     # Python 3 have OrderedDict
@@ -29,7 +30,9 @@ MT = None
 countingInProgress = False
 timeoutInProgress = False
 
+
 class memTask(sublime_plugin.WindowCommand):
+
     def __init__(self, view):
         global MT
 
@@ -63,16 +66,16 @@ class memTask(sublime_plugin.WindowCommand):
             countingInProgress = True
             timeSec = (datetime.datetime.now() - self.lastChangeTime).seconds
 
-            if (self.lastChangeTime - self.branchCheckTime).seconds > self.setting['branch_check_interval']:
-                self.branchCheckTime = self.lastChangeTime
-                try:
-                    with open(self.dirSep.join([sublime.active_window().folders()[0], '.git', 'HEAD']) , "r") as headFile:
-                        self.currentBranch = headFile.read().split('/')[-1].replace('\n', '')
-                        headFile.close()
-                except Exception as e:
-                    print("No git :(", e)
-                except IOError as e:
-                    print('No git :(')
+            # if (self.lastChangeTime - self.branchCheckTime).seconds > self.setting['branch_check_interval']:
+            #     self.branchCheckTime = self.lastChangeTime
+            #     try:
+            #         with open(self.dirSep.join([sublime.active_window().folders()[0], '.git', 'HEAD']) , "r") as headFile:
+            #             self.currentBranch = headFile.read().split('/')[-1].replace('\n', '')
+            #             headFile.close()
+            #     except Exception as e:
+            #         print("No git :(", e)
+            #     except IOError as e:
+            #         print('No git :(')
 
             if timeSec > self.setting['idle']:
                 self.stopTimer = True
@@ -81,11 +84,13 @@ class memTask(sublime_plugin.WindowCommand):
                 if self.fileName is None:
                     self.fileName = 'temp files'
 
-                today = datetime.datetime.now().strftime(self.setting['date_format'])
+                today = datetime.datetime.now().strftime(
+                    self.setting['date_format'])
                 fp = today + self.dirSep + self.fileName
 
                 if fp in self.base:
-                    self.base[fp]['time'] = int(self.base[fp]['time']) + int(5)
+                    self.base[fp]['time'] = int(
+                        self.base[fp]['time']) + int(5)
                     self.base[fp]['branch'] = self.currentBranch
                 else:
                     self.base[fp] = {
@@ -95,7 +100,8 @@ class memTask(sublime_plugin.WindowCommand):
                     }
 
                 TT['fromLastCommit'] += 5
-                self.SetStatus('elapsedTime', 'Elapsed time: ' + str(self.SecToHM(self.base[fp]['time'])))
+                self.SetStatus('elapsedTime', 'Elapsed time: ' +
+                               str(self.SecToHM(self.base[fp]['time'])))
                 sublime.set_timeout(lambda: self.ElapsedTime(), 5000)
         else:
             self.EraseStatus('elapsedTime')
@@ -138,6 +144,7 @@ class memTask(sublime_plugin.WindowCommand):
 
 
 class ShowTimeCommand(sublime_plugin.WindowCommand):
+
     def run(self):
         self.ShowReportVariants()
 
@@ -151,7 +158,8 @@ class ShowTimeCommand(sublime_plugin.WindowCommand):
                 else:
                     newPath = re.sub(r'^([^/]+)/', '', path)
                 if newPath in newSeq:
-                    newSeq[newPath]["time"] = int(newSeq[newPath]["time"]) + seq[path]["time"]
+                    newSeq[newPath]["time"] = int(
+                        newSeq[newPath]["time"]) + seq[path]["time"]
                 else:
                     newSeq[newPath] = seq[path]
             seq = newSeq
@@ -166,12 +174,14 @@ class ShowTimeCommand(sublime_plugin.WindowCommand):
             seq[path]['pathArray'] = path.split(seq[path]["path_divider"])
 
             # Не брать файлы с временных папок
-            if 'temp' not in seq[path]['pathArray'] and 'Temp' not in seq[path]['pathArray']:
+            if 'temp' not in seq[path][
+                    'pathArray'] and 'Temp' not in seq[path]['pathArray']:
                 cur = ret
                 for ind, node in enumerate(seq[path]['pathArray']):
                     # Если последний элемент, то нужно взять время, а не детей
                     if ind == len(seq[path]['pathArray']) - 1:
-                        cur = cur.setdefault(node, {'time': seq[path]['time']})
+                        cur = cur.setdefault(
+                            node, {'time': seq[path]['time']})
                     else:
                         cur = cur.setdefault(node, {})
         return ret
@@ -210,9 +220,16 @@ class ShowTimeCommand(sublime_plugin.WindowCommand):
 
 
 class UpdateMemTaskViewCommand(sublime_plugin.TextCommand):
+
     def run(self, edit, tree, type):
         if type == 'date':
-            tree = OrderedDict(sorted(tree.items(), key=lambda k: k[0][:10].split('.')[::-1], reverse=True))
+            tree = OrderedDict(
+                sorted(
+                    tree.items(),
+                    key=lambda k: k[0][
+                        :10].split('.')[
+                        ::-1],
+                    reverse=True))
 
         self.view = self.view.window().active_view()
         self.printLine(edit, tree, 0)
@@ -243,16 +260,22 @@ class UpdateMemTaskViewCommand(sublime_plugin.TextCommand):
                 if self.IsDate(key):
                     MT.startFolding = self.view.size()
                 amount = self.printLine(edit, tree[key], level + 1)
-                self.view.insert(edit, tempViewSize, ': ' + MT.SecToHM(amount))
+                self.view.insert(
+                    edit, tempViewSize, ': ' + MT.SecToHM(amount))
                 forkAmount += amount
                 if self.IsDate(key):
-                    today = datetime.datetime.now().strftime(MT.setting['date_format'])
+                    today = datetime.datetime.now().strftime(
+                        MT.setting['date_format'])
                     if key != today:
-                        self.view.fold(sublime.Region(MT.startFolding+7, self.view.size()))
+                        self.view.fold(
+                            sublime.Region(
+                                MT.startFolding + 7,
+                                self.view.size()))
         return forkAmount or amount
 
 
 class InsertTimeCommand(sublime_plugin.TextCommand):
+
     def run(self, edit):
         self.view = self.view.window().active_view()
         pos = self.view.sel()[0]
@@ -261,11 +284,18 @@ class InsertTimeCommand(sublime_plugin.TextCommand):
             splittedName = MT.currentBranch.split('-')
             if len(splittedName) >= 2:
                 branchName = splittedName[0] + '-' + splittedName[1] + ' '
-        self.view.insert(edit, pos.begin(), branchName + '#time ' + MT.SecToHMfull(TT['fromLastCommit']))
+        self.view.insert(
+            edit,
+            pos.begin(),
+            branchName +
+            '#time ' +
+            MT.SecToHMfull(
+                TT['fromLastCommit']))
         TT['fromLastCommit'] = 0
 
 
 class memTaskEventHandler(sublime_plugin.EventListener):
+
     def on_modified(self, view):
         global MT
         global timeoutInProgress
